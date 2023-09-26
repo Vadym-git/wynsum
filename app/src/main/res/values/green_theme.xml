@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="Green.Theme.Wynsum" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/primaryGreenDark</item>
+        <item name="colorSecondary">@color/secondaryGreenMedium</item>
+        <item name="colorPrimaryContainer">@color/backgroundGreenLight</item>
+        <item name="backgroundColor">@color/backgroundGreenLight</item>
+    </style>
+
+</resources>

@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+<!--  Green night  -->
+    <style name="Green.Theme.Wynsum" parent="Theme.Material3.DayNight.NoActionBar">
+        <item name="colorPrimary">@color/white</item>
+        <item name="colorSecondary">@color/secondaryGreenMedium</item>
+        <item name="colorPrimaryContainer">@color/backgroundGreenLight</item>
+        <item name="android:textColor">@color/backgroundGreenLight</item>
+        <item name="backgroundColor">@color/primaryGreenDark</item>
+    </style>
+
+</resources>

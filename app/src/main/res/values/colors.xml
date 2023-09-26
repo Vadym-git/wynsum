@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!--  Mix colours  -->
+    <color name="white">#FFFFFF</color>
+    <color name="black">#000000</color>
+    <color name="silver">#888888</color>
+    <color name="transparent">#00000000</color>
+    <!--    Green colours theme  -->
+    <color name="backgroundGreenLight">#7DBABA</color>
+    <color name="primaryGreenDark">#1E545A</color>
+    <color name="secondaryGreenMedium">#297A85</color>
+    <!--    Light(white) colours theme  -->
+    <color name="lightPrimary">#616161</color>
+
+</resources>
