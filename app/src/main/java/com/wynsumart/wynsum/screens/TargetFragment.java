@@ -3,6 +3,8 @@ package com.wynsumart.wynsum.screens;
 import static com.google.android.material.color.MaterialColors.getColor;
 
 import android.annotation.SuppressLint;
+import android.app.AlertDialog;
+import android.content.Context;
 import android.graphics.Color;
 import android.graphics.ColorFilter;
 import android.graphics.PorterDuff;
@@ -10,8 +12,11 @@ import android.graphics.PorterDuffColorFilter;
 import android.media.AudioAttributes;
 import android.media.MediaPlayer;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Vibrator;
 import android.util.Log;
 import android.view.LayoutInflater;
+import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.CompoundButton;
@@ -39,6 +44,8 @@ import com.wynsumart.wynsum.databinding.TargetFragmentLayoutBinding;
 import com.wynsumart.wynsum.view_models.TargetFragmentVM;
 
 import java.io.IOException;
+import java.util.Timer;
+import java.util.TimerTask;
 
 public class TargetFragment extends Fragment {
     private TargetFragmentLayoutBinding binding;
@@ -47,6 +54,9 @@ public class TargetFragment extends Fragment {
     private TargetFragmentVM model;
     private float animationProgress;
     private MediaPlayer musicPlayer;
+    private Handler handler;
+    private boolean isMeditationGoing;
+    private long startTimeMillis = 0; // for long click
 
     public static TargetFragment newInstance(int id) {
         Bundle args = new Bundle();
@@ -59,11 +69,26 @@ public class TargetFragment extends Fragment {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        handler = new Handler();
         targetId = getArguments().getInt(TARGET_ID_KAY);
         musicPlayer = initMediaPlayer();
         setMusicTrack("https://cdn.pixabay.com/audio/2023/09/13/audio_ee2221f74c.mp3");
+        OnBackPressedCallback callback = new OnBackPressedCallback(true /* enabled by default */) {
+            @Override
+            public void handleOnBackPressed() {
+                // NOT WORKING YET
+                if (isMeditationGoing) {
+                    showDialog();
+//                    ((MainActivity) requireActivity()).showToast("Pause long press");
+                } else {
+                    requireActivity().getSupportFragmentManager().popBackStack();
+                }
+            }
+        };
+        requireActivity().getOnBackPressedDispatcher().addCallback(this, callback);
     }
 
+    @SuppressLint("ClickableViewAccessibility")
     @Nullable
     @Override
     public View onCreateView(@NonNull LayoutInflater inflater, @Nullable ViewGroup container, @Nullable Bundle savedInstanceState) {
@@ -74,19 +99,55 @@ public class TargetFragment extends Fragment {
                 ((MainActivity) getActivity()).goBack();
             }
         });
-        binding.playTargetButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                model.startMeditation();
-            }
-        });
         binding.musicSwitcherButton.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                if(isChecked & model.isTimerGoing().getValue()){
+                if (isChecked & model.isTimerGoing().getValue()) {
                     musicPlayer.start();
                 }
-                if (!isChecked & musicPlayer.isPlaying()) {musicPlayer.pause();}
+                if (!isChecked & musicPlayer.isPlaying()) {
+                    musicPlayer.pause();
+                }
+            }
+        });
+        binding.playTargetButton.setOnTouchListener(new View.OnTouchListener() {
+            Runnable runnable = new Runnable() {
+                @Override
+                public void run() {
+                    binding.loaderAnimation.setVisibility(View.VISIBLE);
+                    binding.loaderAnimation.playAnimation();
+                    binding.loaderAnimation.setSpeed(1.4F);
+                    changeAnimation(-1);
+                }
+            };
+            Runnable vibrate = new Runnable() {
+                @Override
+                public void run() {
+                    model.finishMeditation();
+                    binding.loaderAnimation.pauseAnimation();
+                    ((Vibrator) requireActivity().getSystemService(Context.VIBRATOR_SERVICE)).vibrate(Vibrator.VIBRATION_EFFECT_SUPPORT_YES);
+                }
+            };
+
+            @Override
+            public boolean onTouch(View v, MotionEvent event) {
+                // need to rewrite with Rx or Threads
+                switch (event.getAction()) {
+                    case MotionEvent.ACTION_DOWN:
+                        startTimeMillis = System.currentTimeMillis();
+                        model.startMeditation();
+                        handler.postDelayed(runnable, 500);
+                        handler.postDelayed(vibrate, 5000);
+                        break;
+                    case MotionEvent.ACTION_UP:
+                    case MotionEvent.ACTION_CANCEL:
+                        handler.removeCallbacks(runnable);
+                        handler.removeCallbacks(vibrate);
+                        binding.loaderAnimation.pauseAnimation();
+                        binding.loaderAnimation.setVisibility(View.INVISIBLE);
+                        break;
+                }
+                return false;
             }
         });
         return binding.getRoot();
@@ -103,23 +164,36 @@ public class TargetFragment extends Fragment {
             if (isGoing) {
                 binding.playAnimation.playAnimation();
                 binding.playAnimation.setProgress(animationProgress);
-                changeAnimation();
-                binding.playTargetButton.setImageResource(R.drawable.play_pause_24);
-                if (binding.musicSwitcherButton.isChecked()){
+                changeAnimation(-1);
+                binding.playTargetButton.setBackgroundResource(R.drawable.play_pause_24);
+                if (binding.musicSwitcherButton.isChecked()) {
                     musicPlayer.start();
                 }
             } else {
                 animationProgress = binding.playAnimation.getProgress();
                 binding.playAnimation.pauseAnimation();
-                changeAnimation();
-                binding.playTargetButton.setImageResource(R.drawable.play_24);
-                if (musicPlayer.isPlaying()){musicPlayer.pause();}
+                changeAnimation(-1);
+                binding.playTargetButton.setBackgroundResource(R.drawable.play_24);
+                if (musicPlayer.isPlaying()) {
+                    musicPlayer.pause();
+                }
             }
         });
-        changeAnimation();
+        model.isMeditationGoing().observe(getViewLifecycleOwner(), isMGoing -> {
+            isMeditationGoing = isMGoing;
+            Log.d("iks", "STOPPED");
+            if (!isMGoing) {
+                if (musicPlayer != null) {
+                    if (musicPlayer.isPlaying()) {
+                        musicPlayer.pause();
+                    }
+                    musicPlayer.seekTo(0);
+                }
+            }
+        });
     }
 
-    private MediaPlayer initMediaPlayer(){
+    private MediaPlayer initMediaPlayer() {
         MediaPlayer mediaPlayer = new MediaPlayer();
         mediaPlayer.setAudioAttributes(
                 new AudioAttributes.Builder()
@@ -136,7 +210,7 @@ public class TargetFragment extends Fragment {
         return mediaPlayer;
     }
 
-    private void setMusicTrack(String link){
+    private void setMusicTrack(String link) {
         musicPlayer.reset();
         try {
             musicPlayer.setDataSource(link);
@@ -146,7 +220,7 @@ public class TargetFragment extends Fragment {
         musicPlayer.prepareAsync(); // might take long! (for buffering, etc)
     }
 
-    private void changeAnimation() {
+    private void changeAnimation(int colour) {
         resetAnimationView();
         LottieAnimationView animationView = binding.playAnimation;
         animationView.addValueCallback(
@@ -155,10 +229,18 @@ public class TargetFragment extends Fragment {
                 new SimpleLottieValueCallback<ColorFilter>() {
                     @Override
                     public ColorFilter getValue(LottieFrameInfo<ColorFilter> frameInfo) {
-                        return new PorterDuffColorFilter(getContext().getColor(R.color.primaryGreenDark), PorterDuff.Mode.SRC_ATOP);
+                        return new PorterDuffColorFilter(getContext().getColor(R.color.white), PorterDuff.Mode.SRC_ATOP);
                     }
                 }
         );
+
+        binding.loaderAnimation.addValueCallback(new KeyPath("**"), LottieProperty.COLOR_FILTER,
+                new SimpleLottieValueCallback<ColorFilter>() {
+                    @Override
+                    public ColorFilter getValue(LottieFrameInfo<ColorFilter> frameInfo) {
+                        return new PorterDuffColorFilter(getContext().getColor(R.color.white), PorterDuff.Mode.SRC_ATOP);
+                    }
+                });
     }
 
     private void resetAnimationView() {
@@ -170,6 +252,26 @@ public class TargetFragment extends Fragment {
                     }
                 }
         );
+        binding.loaderAnimation.addValueCallback(new KeyPath("**"), LottieProperty.COLOR_FILTER,
+                new SimpleLottieValueCallback<ColorFilter>() {
+                    @Override
+                    public ColorFilter getValue(LottieFrameInfo<ColorFilter> frameInfo) {
+                        return null;
+                    }
+                }
+        );
+    }
+
+    private void showDialog() {
+        AlertDialog dialog = new AlertDialog.Builder(requireContext())
+                .setCancelable(false)
+                .setIcon(null)
+                .setTitle("Finish session?")
+                .setMessage("Would you like to finish the session?")
+                .setPositiveButton("Yes", null)
+                .setNeutralButton("No", null)
+                .create();
+        dialog.show();
     }
 
     @Override

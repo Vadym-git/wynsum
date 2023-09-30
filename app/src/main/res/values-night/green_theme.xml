@@ -3,10 +3,10 @@
 <!--  Green night  -->
     <style name="Green.Theme.Wynsum" parent="Theme.Material3.DayNight.NoActionBar">
         <item name="colorPrimary">@color/white</item>
-        <item name="colorSecondary">@color/secondaryGreenMedium</item>
-        <item name="colorPrimaryContainer">@color/backgroundGreenLight</item>
-        <item name="android:textColor">@color/backgroundGreenLight</item>
-        <item name="backgroundColor">@color/primaryGreenDark</item>
+        <item name="colorSecondary">@color/green3</item>
+        <item name="backgroundColor">@color/green4</item>
+        <item name="colorOnPrimary">@color/green1</item>
+        <item name="android:textColor">@color/green1</item>
     </style>
 
 </resources>

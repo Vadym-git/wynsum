@@ -5,6 +5,22 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
+
+    <com.airbnb.lottie.LottieAnimationView
+        android:id="@+id/loaderAnimation"
+        app:layout_constraintStart_toStartOf="@id/playAnimation"
+        app:layout_constraintEnd_toEndOf="@id/playAnimation"
+        app:layout_constraintTop_toTopOf="@id/playAnimation"
+        app:layout_constraintBottom_toBottomOf="@id/playAnimation"
+        android:layout_margin="90dp"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        app:lottie_autoPlay="false"
+        app:lottie_loop="true"
+        app:lottie_rawRes="@raw/load_anim"
+        android:visibility="invisible"
+        />
+
     <com.airbnb.lottie.LottieAnimationView
         android:id="@+id/playAnimation"
         android:layout_width="match_parent"
@@ -13,11 +29,11 @@
         app:lottie_loop="true"
         app:lottie_rawRes="@raw/data" />
 
-    <ImageView
+    <Button
         android:id="@+id/playTargetButton"
         android:layout_width="100dp"
         android:layout_height="100dp"
-        android:src="@drawable/play_24"
+        android:background="@drawable/play_24"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"

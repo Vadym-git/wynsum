@@ -8,8 +8,8 @@ import androidx.lifecycle.MutableLiveData;
 import androidx.lifecycle.ViewModel;
 
 public class TargetFragmentVM extends ViewModel {
-    private CountDownTimer timer;
-    private final MutableLiveData<Long> timeLeft = new MutableLiveData(60L);
+    public CountDownTimer timer;
+    private final MutableLiveData<Long> timeLeft = new MutableLiveData(10L);
     private final MutableLiveData<Boolean> _isTimerGoing = new MutableLiveData(false);
     public LiveData<Boolean> isTimerGoing(){
         return _isTimerGoing;
@@ -17,6 +17,8 @@ public class TargetFragmentVM extends ViewModel {
     public LiveData<Long> getTimeLeft() {
         return timeLeft;
     }
+    private final MutableLiveData<Boolean> _isMeditationGoing = new MutableLiveData(false);
+    public LiveData<Boolean> isMeditationGoing(){return _isMeditationGoing;}
 
     public void startMeditation() {
         if (_isTimerGoing.getValue()) {
@@ -26,7 +28,13 @@ public class TargetFragmentVM extends ViewModel {
             timer = initTimer(timeLeft.getValue()*1000);
             timer.start();
             _isTimerGoing.setValue(true);
+            _isMeditationGoing.setValue(true);
         }
+    }
+
+    public void finishMeditation(){
+//        timer.cancel();
+        timer.onFinish();
     }
 
     private CountDownTimer initTimer(long time){
@@ -35,11 +43,12 @@ public class TargetFragmentVM extends ViewModel {
             public void onTick(long millisUntilFinished) {
                 timeLeft.setValue(millisUntilFinished / 1000);
             }
-
             @Override
             public void onFinish() {
                 _isTimerGoing.setValue(false);
-                timeLeft.setValue(60L); // mast me changed !!! get time from the settings
+                _isMeditationGoing.setValue(false);
+                timeLeft.setValue(10L); // mast me changed !!! get time from the settings
+                Log.d("iks", "STOPPED1");
             }
         };
         return timer;
